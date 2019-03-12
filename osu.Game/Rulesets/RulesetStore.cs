@@ -16,15 +16,22 @@ namespace osu.Game.Rulesets
     /// </summary>
     public class RulesetStore : DatabaseBackedStore
     {
-        private static readonly Dictionary<Assembly, Type> loaded_assemblies = new Dictionary<Assembly, Type>();
+        private static readonly Dictionary<string, Type> loaded_assemblies = new Dictionary<string, Type>();
 
         static RulesetStore()
         {
             AppDomain.CurrentDomain.AssemblyResolve += currentDomain_AssemblyResolve;
 
-            foreach (string file in Directory.GetFiles(Environment.CurrentDirectory, $"{ruleset_library_prefix}.*.dll")
-                                             .Where(f => !Path.GetFileName(f).Contains("Tests")))
-                loadRulesetFromFile(file);
+            try
+            {
+                foreach (string file in Directory.GetFiles(Environment.CurrentDirectory, $"{ruleset_library_prefix}.*.dll")
+                                                     .Where(f => !Path.GetFileName(f).Contains("Tests")))
+                    loadRulesetFromFile(file);
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Failed to load rulesets from current directory");
+            }
         }
 
         public RulesetStore(IDatabaseContextFactory factory)
@@ -52,7 +59,11 @@ namespace osu.Game.Rulesets
         /// </summary>
         public IEnumerable<RulesetInfo> AvailableRulesets;
 
-        private static Assembly currentDomain_AssemblyResolve(object sender, ResolveEventArgs args) => loaded_assemblies.Keys.FirstOrDefault(a => a.FullName == args.Name);
+        private static Assembly currentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
+        {
+            if (loaded_assemblies.TryGetValue(args.Name, out var t)) return t.Assembly;
+            return null;
+        }
 
         private const string ruleset_library_prefix = "osu.Game.Rulesets";
 
@@ -121,11 +132,24 @@ namespace osu.Game.Rulesets
             try
             {
                 var assembly = Assembly.LoadFrom(file);
-                loaded_assemblies[assembly] = assembly.GetTypes().First(t => t.IsPublic && t.IsSubclassOf(typeof(Ruleset)));
+                loaded_assemblies[assembly.FullName] = assembly.GetTypes().First(t => t.IsPublic && t.IsSubclassOf(typeof(Ruleset)));
             }
             catch (Exception e)
             {
                 Logger.Error(e, $"Failed to load ruleset {filename}");
+            }
+        }
+
+        public static void LoadRulesetFromType(Func<Type> funcType, string loggingName)
+        {
+            try
+            {
+                var type = funcType();
+                loaded_assemblies[type.Assembly.FullName] = type;
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, $"Failed to load ruleset {loggingName}");
             }
         }
     }
