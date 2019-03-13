@@ -23,6 +23,14 @@
     <None Include="Properties\AndroidManifest.xml" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\osu-framework\osu.Framework.Android\osu.Framework.Android.csproj">
+      <Project>{3dde355f-a7b1-4e92-a22e-6befbf8a3c3d}</Project>
+      <Name>osu.Framework.Android</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\osu-framework\osu.Framework\osu.Framework.csproj">
+      <Project>{8a1df0ca-6025-4bee-b460-5cafd833e1f6}</Project>
+      <Name>osu.Framework</Name>
+    </ProjectReference>
     <ProjectReference Include="..\osu.Game.Rulesets.Catch\osu.Game.Rulesets.Catch.csproj">
       <Project>{58f6c80c-1253-4a0e-a465-b8c85ebeadf3}</Project>
       <Name>osu.Game.Rulesets.Catch</Name>
